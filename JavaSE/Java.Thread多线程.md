@@ -79,7 +79,7 @@ if (threadStatus != 0)
 
 ## 三、Thread中常用方法
 1.start();  
-启动线程，调用run()方法；
+启动线程，调用run()方法； 
 2.run();  
 重写，将需要执行的操作声明于此；  
 3.currentThread();  
@@ -101,9 +101,9 @@ private static int threadInitNumber;
 ```
 6.yield();  
 释放CPU，将控制权交给其他线程；  
-7.join();
-阻塞当前进程，让其他线程执行，且执行完成后再继续执行；
-8.sleep(long millitime);
+7.join();  
+阻塞当前进程，让其他线程执行，且执行完成后再继续执行；  
+8.sleep(long millitime);  
 阻塞该线程，时间millitime毫秒；  
 9.stop();   
 强制终止线程，不建议使用；  
