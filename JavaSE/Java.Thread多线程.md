@@ -79,7 +79,7 @@ if (threadStatus != 0)
 
 ## 三、Thread中常用方法
 1.start();  
-启动线程，调用run()方法； 
+启动线程，调用run()方法；  
 2.run();  
 重写，将需要执行的操作声明于此；  
 3.currentThread();  
