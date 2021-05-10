@@ -1,4 +1,4 @@
-# Java.Thread多线程
+# Thread多线程
 
 ---
 
