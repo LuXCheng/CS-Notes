@@ -117,7 +117,7 @@ private static int threadInitNumber;
 Thread中定义了最大、最小、默认优先级值；  
 最大10，最小1，默认5；  
 ```java
-/**
+    /**
      * The minimum priority that a thread can have.
      */
     public final static int MIN_PRIORITY = 1;
