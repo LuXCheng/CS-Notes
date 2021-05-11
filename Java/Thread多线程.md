@@ -187,4 +187,179 @@ public class ThreadTest {
     14 Thread-0 10
     16 Thread-0 10
     
-可以看到优先级高的主线程和子线程任然是交替执行，并不意味着高优先级就一定被先执行，而是高优先级高概率执行；  
+可以看到优先级高的主线程和子线程任然是交替执行，并不意味着高优先级就一定被先执行完，低优先级才执行，而是高优先级高概率执行；  
+
+## 五、线程的生命周期
+
+Thread.State中的定义，State，Thread一个内部类；  
+生命周期的状态：  
+```java
+//内部类
+public enum State {
+        /*Thread state for a thread which has not yet started.*/
+        /*线程还未开始执行*/
+        NEW,
+
+        /** Thread state for a runnable thread.  A thread in the runnable state is executing in the Java virtual machine but it may be waiting for other resources from the operating system such as processor. */
+        /*具备运行条件，没有分配CPU资源*/
+        RUNNABLE,
+
+        /** Thread state for a thread blocked waiting for a monitor lock. A thread in the blocked state is waiting for a monitor lock to enter a synchronized block/method or reenter a synchronized block/method after calling {@link Object#wait() Object.wait}. */
+        /*阻塞*/
+        BLOCKED,
+
+        WAITING,
+
+        TIMED_WAITING,
+
+        /**
+         * Thread state for a terminated thread.
+         * The thread has completed execution.
+         */
+         /*死亡*/
+        TERMINATED;
+    }
+```
+运行--->阻塞  
+wait(),sleep(),join(),等待同步锁synchronized,resume();  
+阻塞--->就绪  
+notify()/notifyAll()，sleep()结束，join()结束，获取同步锁synchronized，suspend();  
+## 六、线程同步安全问题  
+### （一）同步代码块
+#### 1.继承Thread类的线程同步处理
+**窗口买票问题**，当直接创建三个线程运行会出现问题，使用synchronized锁解决；  
+
+- 使用synchronized包含住造作共享数据的代码块；  
+- 创建同步监视器，即锁，任何类的对象都可以作为锁；  
+
+同步监视器必须是static即类对象，因为当继承Thread类实现多线程时，会创造多个线程，如果没有定义为静态对象，则会出现每个线程创建一个锁，使得同步锁没有意义；  
+同步监视器也可以为当前类的类变量，即类名.class()，如例子中的Ticket.class();  
+
+示例：  
+```java
+class Ticket extends Thread {
+
+    public static int ticket = 100;
+    public static final Object obj = new Object();
+
+    @Override
+    public void run() {
+        while(true) {
+            synchronized(obj) {
+                if (ticket > 0) {
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    System.out.println(Thread.currentThread().getName() + " " + ticket);
+                    ticket--;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+}
+```
+#### 2.实现Runnable接口的多线程同步安全处理
+与继承Thread类的多线程不同的是，此时只需要定义任意一个类的对象；  
+同步监视器可以使用this；  
+```java
+class Ticket implements Runnable {
+
+    private int ticket = 100;
+    final Object obj = new Object();
+
+    @Override
+    public void run() {
+        while(true) {
+            synchronized(obj) {
+                if(ticket>0) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    System.out.println(Thread.currentThread().getName() + " " + ticket);
+                    ticket--;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+}
+```
+
+###（二）同步方法
+定义同步方法仍会使用同步监视器，不用我们声明；  
+
+#### 1.实现接口
+定义synchronized方法，此时方法中有this类对象同步监视器；  
+```java
+class Ticket implements Runnable {
+
+    private int ticket = 100;
+    final Object obj = new Object();
+
+    @Override
+    public void run() {
+        while(true) {
+            sellOut();
+        }
+    }
+
+    public synchronized void sellOut() {
+        if(ticket>0) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(Thread.currentThread().getName() + " " + ticket);
+            ticket--;
+        }
+    }
+}
+```
+#### 2.继承Runnable
+此时定义方法时，需将方法定义为static，此时监视器为当前类本身，即public static synchronized void sellOut()；  
+### （三）Lock锁解决线程安全问题，JDK5.0新增
+示例：  
+```java
+class Ticket implements Runnable {
+
+    private int ticket = 100;
+
+    private ReentrantLock lock = new ReentrantLock();
+
+    @Override
+    public void run() {
+        while(true) {
+            try {
+                lock.lock();
+                if (ticket > 0) {
+                    System.out.println(Thread.currentThread().getName() + " " + ticket);
+                    ticket--;
+                } else {
+                    break;
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+    }
+}
+```
+定义ReentrantLock对象，完成线程安全问题；  
+  
+  
+**synchronized和Lock的区别**  
+
+1.synchronized是隐式锁，在执行完同步代码后，自动释放同步监视器；  
+2.Lock是显示锁，需要手动启动同步：.lock()和手动结束同步：.unlock();  
