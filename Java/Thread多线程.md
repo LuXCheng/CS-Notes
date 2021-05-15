@@ -76,7 +76,70 @@ public class ThreadTest {
 if (threadStatus != 0)
             throw new IllegalThreadStateException();
 ```
+### 方法三、使用Callable创建多线程,JDK5.0新增
+实现Callable接口定义多线程，重写call方法，并将该接口对象做参数传给FutureTask对象，再把FutureTask对象传给Thread对象，调用start();  
+Callable定义的多线程功能更加丰富，其call方法可以返回一个对象；  
+例如：  
+```java
+class SumThread implements Callable {
 
+    @Override
+    public Object call() throws Exception {
+        int sum=0;
+        for (int i = 1; i <= 100; i++) {
+            System.out.println(Thread.currentThread().getName()+" "+i);
+            sum+=i;
+        }
+        return sum;
+    }
+}
+
+public class ThreadCallable {
+    public static void main(String[] args) {
+        SumThread thread = new SumThread();
+
+        FutureTask futuretask = new FutureTask(thread);
+
+        Thread t = new Thread(futuretask);
+        t.setName("getSum");
+        t.start();
+
+        try {
+            Object sum=futuretask.get();
+            System.out.println("sum is " + sum);
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+### 方法四、创建线程池,JDK5.0新增
+
+```java
+class NumThread implements Runnable {
+
+    @Override
+    public void run() {
+        for (int i = 1; i <= 100; i++) {
+            if(i % 2 == 0) {
+                System.out.println(Thread.currentThread().getName()+" "+i);
+            }
+        }
+    }
+}
+
+public class ThreadPool {
+    public static void main(String[] args) {
+
+        ExecutorService service = Executors.newFixedThreadPool(10);
+
+        ThreadPoolExecutor service1 = (ThreadPoolExecutor) service;
+
+        service.execute(new NumThread());
+    }
+}
+```
+continue......
 ## 三、Thread中常用方法
 1.start();  
 启动线程，调用run()方法；  
@@ -362,3 +425,48 @@ class Ticket implements Runnable {
 
 1.synchronized是隐式锁，在执行完同步代码后，自动释放同步监视器；  
 2.Lock是显示锁，需要手动启动同步：.lock()和手动结束同步：.unlock();  
+3.## 七、线程的通信
+### 方法
+当需要多个线程交替执行时，采用线程通信，对同步监视器进行操作；  
+**wait()**  
+此方法阻塞当前正在执行的线程，并释放同步锁，使其他线程开始获得锁，  
+**notify()/notifyAll()**  
+唤醒因wait()操作而阻塞的线程；  
+```java
+class Print implements Runnable {
+
+    private int number = 1;
+    private final Object obj = new Object();
+
+    @Override
+    public void run() {
+        while(true) {
+            synchronized (obj) {
+                obj.notify();
+                if(number <= 100) {
+                    System.out.println(Thread.currentThread().getName()+" "+number);
+                    number++;
+                } else {
+                    break;
+                }
+
+                try {
+                    obj.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}
+```
+### wait()和sleep()的区别？
+同：  
+
+- 都会使当前线程阻塞
+
+异：  
+
+- 1.wait()定义在Object类中，sleep定义在Thread类  
+- 2.当在同步代码块或同步方法中时，wait()执行后会释放当前同步监视器，sleep()不会；  
+- 3.sleep()可在任意一处使用，而wait()只能在同步方法或代码块中使用：  
